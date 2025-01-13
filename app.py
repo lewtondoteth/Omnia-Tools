@@ -12,7 +12,7 @@ def get_unique_attributes():
     conn.close()
     grouped_attributes = {}
     for trait_type, value in attributes:
-        if trait_type and value:  # Ensure both trait_type and value are non-empty
+        if trait_type and value:
             grouped_attributes.setdefault(trait_type, []).append(value)
     return grouped_attributes
 
@@ -23,30 +23,46 @@ def index():
 
 @app.route('/search', methods=['POST'])
 def search():
-    selected_attributes = request.form.getlist('attributes')
-    pet_id = request.form.get('pet_id')
+    pet_id = request.form.get('pet_id')  # Use form-encoded data
+    selected_filters = request.form.getlist('filters')  # Retrieve filters as a list
+
     conn = sqlite3.connect('pixlpets1.db')
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
 
-    if pet_id:
-        cursor.execute("SELECT id, name, image FROM pets WHERE id = ?", (pet_id,))
-        pets = cursor.fetchall()
-    elif selected_attributes:
-        query = """
-            SELECT DISTINCT pets.id, pets.name, pets.image
-            FROM pets
-            JOIN attributes ON pets.id = attributes.pet_id
-            WHERE attributes.value IN ({})
-        """.format(','.join('?' * len(selected_attributes)))
-        cursor.execute(query, selected_attributes)
-        pets = cursor.fetchall()
-    else:
-        cursor.execute("SELECT id, name, image FROM pets")
-        pets = cursor.fetchall()
+    pets = []
+    query = """
+        SELECT pets.id AS pet_id, pets.image AS image,
+               element.value AS element,
+               egg.value AS egg_status,
+               GROUP_CONCAT(moves.value, ', ') AS moves
+        FROM pets
+        LEFT JOIN attributes AS element ON pets.id = element.pet_id AND element.trait_type = 'Element'
+        LEFT JOIN attributes AS egg ON pets.id = egg.pet_id AND egg.trait_type = 'Egg'
+        LEFT JOIN attributes AS moves ON pets.id = moves.pet_id AND moves.trait_type = 'Moves'
+    """
+    conditions = []
+    params = []
 
+    if pet_id:
+        conditions.append("pets.id = ?")
+        params.append(pet_id)
+    elif selected_filters:
+        filter_conditions = " OR ".join([f"all_attributes LIKE ?" for _ in selected_filters])
+        conditions.append(f"({filter_conditions})")
+        params.extend([f"%{filter}%" for filter in selected_filters])
+
+    if conditions:
+        query += " WHERE " + " AND ".join(conditions)
+
+    query += " GROUP BY pets.id"
+
+    cursor.execute(query, params)
+    pets = cursor.fetchall()
     conn.close()
-    return render_template('results.html', pets=pets)
+
+    attributes = get_unique_attributes()
+    return render_template('index.html', attributes=attributes, pets=pets)
 
 if __name__ == '__main__':
     app.run(debug=True)
