@@ -1,53 +1,52 @@
 from flask import Flask, request, render_template
 import sqlite3
-import json
 
 app = Flask(__name__)
 
+def get_unique_attributes():
+    """Fetch all unique attributes and their values."""
+    conn = sqlite3.connect('pixlpets1.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT DISTINCT trait_type, value FROM attributes")
+    attributes = cursor.fetchall()
+    conn.close()
+    grouped_attributes = {}
+    for trait_type, value in attributes:
+        if trait_type and value:  # Ensure both trait_type and value are non-empty
+            grouped_attributes.setdefault(trait_type, []).append(value)
+    return grouped_attributes
+
 @app.route('/')
 def index():
-    return render_template('index.html')
+    attributes = get_unique_attributes()
+    return render_template('index.html', attributes=attributes)
 
 @app.route('/search', methods=['POST'])
 def search():
+    selected_attributes = request.form.getlist('attributes')
     pet_id = request.form.get('pet_id')
     conn = sqlite3.connect('pixlpets1.db')
-    conn.row_factory = sqlite3.Row  # Use row factory for dict-like results
+    conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
 
-    # Fetch pet details
-    cursor.execute("SELECT * FROM pets WHERE id = ?", (pet_id,))
-    pet = cursor.fetchone()
-
-    # Initialize moves and unhatched flag
-    moves = []
-    is_unhatched = False
-
-    if pet:
-        pet_dict = dict(pet)
-
-        # Parse and format the 'attributes' field if it exists
-        if 'attributes' in pet_dict:
-            attributes = json.loads(pet_dict['attributes'])
-            formatted_attributes = []
-            for item in attributes:
-                formatted_attributes.append(f"{item['trait_type']}: {item['value']}")
-                if item['trait_type'] == 'egg' and item['value'] == 'unhatched':
-                    is_unhatched = True
-
-            pet_dict['formatted_attributes'] = formatted_attributes
-
-        # If not unhatched, fetch moves
-        if not is_unhatched:
-            cursor.execute("SELECT value FROM attributes WHERE pet_id = ? AND trait_type = 'Moves'", (pet_id,))
-            moves = [row[0] for row in cursor.fetchall()]
+    if pet_id:
+        cursor.execute("SELECT id, name, image FROM pets WHERE id = ?", (pet_id,))
+        pets = cursor.fetchall()
+    elif selected_attributes:
+        query = """
+            SELECT DISTINCT pets.id, pets.name, pets.image
+            FROM pets
+            JOIN attributes ON pets.id = attributes.pet_id
+            WHERE attributes.value IN ({})
+        """.format(','.join('?' * len(selected_attributes)))
+        cursor.execute(query, selected_attributes)
+        pets = cursor.fetchall()
+    else:
+        cursor.execute("SELECT id, name, image FROM pets")
+        pets = cursor.fetchall()
 
     conn.close()
-
-    if pet:
-        return render_template('result.html', pet=pet_dict, moves=moves, is_unhatched=is_unhatched)
-    else:
-        return render_template('result.html', error="Pet not found")
+    return render_template('results.html', pets=pets)
 
 if __name__ == '__main__':
     app.run(debug=True)

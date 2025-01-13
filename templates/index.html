@@ -6,49 +6,176 @@
     <title>Pet Search</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Arial', sans-serif;
             margin: 0;
             padding: 0;
-            background-color: #f9f9f9;
+            background-color: #f4f4f4;
             display: flex;
-            justify-content: center;
-            align-items: center;
             height: 100vh;
+            overflow: hidden;
         }
-        .container {
-            background: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            text-align: center;
+        .sidebar {
+            background: linear-gradient(to bottom, #343a40, #495057);
+            color: white;
             width: 300px;
+            height: 100%;
+            padding: 20px;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
+            overflow-y: auto;
         }
-        input, button {
+        .sidebar h1 {
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: #ffffff;
+        }
+        .search-box {
+            margin-bottom: 20px;
+            background-color: #495057;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        .search-box input, .search-box button {
             width: 100%;
             padding: 10px;
             margin: 10px 0;
-            border: 1px solid #ccc;
-            border-radius: 5px;
+            border: none;
+            border-radius: 6px;
             font-size: 16px;
         }
-        button {
-            background-color: #007bff;
+        .search-box button {
+            background-color: #28a745;
             color: white;
+            font-weight: bold;
             cursor: pointer;
         }
-        button:hover {
-            background-color: #0056b3;
+        .search-box button:hover {
+            background-color: #218838;
+        }
+        fieldset {
+            border: none;
+            margin-bottom: 20px;
+        }
+        legend {
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            padding: 10px;
+            background: #6c757d;
+            border-radius: 6px;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .checkbox-group {
+            display: none;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .checkbox-group label {
+            background-color: #f8f9fa;
+            color: #000000; /* Ensure text is visible */
+            padding: 10px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .checkbox-group input {
+            margin-right: 10px;
+        }
+        .content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background-color: #ffffff;
+            border-left: 1px solid #ddd;
+        }
+        .pet-card {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #f8f8f8;
+        }
+        .pet-card img {
+            width: 100px;
+            height: 100px;
+            border-radius: 8px;
+            margin-right: 20px;
+        }
+        .pet-card a {
+            text-decoration: none;
+            color: #007bff;
+            font-weight: bold;
+        }
+        .pet-card a:hover {
+            text-decoration: underline;
         }
     </style>
+    <script>
+        function toggleGroup(legendElement) {
+            const checkboxGroup = legendElement.nextElementSibling;
+            checkboxGroup.style.display = checkboxGroup.style.display === 'none' ? 'flex' : 'none';
+        }
+
+        async function fetchResults(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const response = await fetch(event.target.action, {
+                method: event.target.method,
+                body: formData
+            });
+
+            if (response.ok) {
+                const html = await response.text();
+                document.querySelector('.content').innerHTML = html;
+            } else {
+                alert('Error loading results.');
+            }
+        }
+
+        window.onload = function () {
+            const forms = document.querySelectorAll('form');
+            forms.forEach(form => form.addEventListener('submit', fetchResults));
+        };
+    </script>
 </head>
 <body>
-    <div class="container">
-        <h1>Search for a Pet</h1>
+    <div class="sidebar">
+        <h1>Filter Pets</h1>
+        <div class="search-box">
+            <form action="/search" method="POST">
+                <input type="text" id="pet-id" name="pet_id" placeholder="Search by Pet ID">
+                <button type="submit">Search</button>
+            </form>
+        </div>
         <form action="/search" method="POST">
-            <label for="pet_id">Enter Pet ID:</label>
-            <input type="text" id="pet_id" name="pet_id" required>
-            <button type="submit">Search</button>
+            {% for trait, values in attributes.items() %}
+                <fieldset>
+                    <legend onclick="toggleGroup(this)">
+                        {{ trait }} <span>&#9654;</span>
+                    </legend>
+                    <div class="checkbox-group">
+                        {% for value in values %}
+                            <label>
+                                <input type="checkbox" name="attributes" value="{{ value }}"> {{ value }}
+                            </label>
+                        {% endfor %}
+                    </div>
+                </fieldset>
+            {% endfor %}
         </form>
+    </div>
+    <div class="content">
+        <h2>Search Results</h2>
+        <div id="results-container">
+            <!-- Results will render here -->
+        </div>
     </div>
 </body>
 </html>

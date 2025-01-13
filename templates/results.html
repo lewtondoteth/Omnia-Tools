@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Results</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .pet-card {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #f8f8f8;
+        }
+        .pet-card img {
+            width: 100px;
+            height: 100px;
+            border-radius: 8px;
+            margin-right: 20px;
+        }
+        .pet-card a {
+            text-decoration: none;
+            color: #007bff;
+            font-weight: bold;
+        }
+        .pet-card a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Search Results</h1>
+        {% if pets %}
+            {% for pet in pets %}
+                <div class="pet-card">
+                    <img src="{{ pet.image }}" alt="{{ pet.name }}">
+                    <div>
+                        <h2>{{ pet.name }}</h2>
+                        <a href="/search?pet_id={{ pet.id }}">View Details</a>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p>No pets found matching your criteria.</p>
+        {% endif %}
+        <a href="/">Back to Search</a>
+    </div>
+</body>
+</html>

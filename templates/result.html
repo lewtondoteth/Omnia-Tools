@@ -78,6 +78,9 @@
             {% if pet.image %}
                 <img src="{{ pet.image }}" alt="Pet Image" class="pet-image">
             {% endif %}
+            {% if element %}
+                <h2>Element: {{ element }}</h2>
+            {% endif %}
             {% if not is_unhatched %}
                 <h2>Moves</h2>
                 <div class="moves-grid">
