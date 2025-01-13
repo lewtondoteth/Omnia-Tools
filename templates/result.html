@@ -13,7 +13,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh; /* Ensure it spans the full screen height */
+            min-height: 100vh;
         }
         .container {
             background: #fff;
@@ -25,27 +25,39 @@
             width: 90%;
         }
         h1 {
-            margin-top: 0; /* Remove extra space above the ID */
+            margin-top: 0;
             font-size: 24px;
         }
         .pet-image {
             margin: 20px 0;
             border: 1px solid #ddd;
             border-radius: 8px;
-            max-width: 100%; /* Constrain image width */
-            max-height: 300px; /* Constrain image height */
-            height: auto; /* Maintain aspect ratio */
-            display: block; /* Ensure it stays below the ID */
+            max-width: 100%;
+            max-height: 300px;
+            height: auto;
+            display: block;
             margin-left: auto;
             margin-right: auto;
         }
-        .attributes {
+        .attributes, .moves {
             text-align: left;
             margin-top: 20px;
             padding: 10px;
             background-color: #f8f8f8;
             border-radius: 5px;
             border: 1px solid #ddd;
+        }
+        .moves-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .move {
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: center;
+            background-color: #f9f9f9;
         }
         a {
             text-decoration: none;
@@ -62,15 +74,18 @@
 <body>
     <div class="container">
         {% if pet %}
-            <!-- Display ID -->
             <h1>ID: {{ pet.id }}</h1>
-
-            <!-- Display Image -->
             {% if pet.image %}
                 <img src="{{ pet.image }}" alt="Pet Image" class="pet-image">
             {% endif %}
-
-            <!-- Display Attributes -->
+            {% if not is_unhatched %}
+                <h2>Moves</h2>
+                <div class="moves-grid">
+                    {% for move in moves %}
+                        <div class="move">{{ move }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
             {% if pet.formatted_attributes %}
                 <h2>Attributes</h2>
                 <div class="attributes">
