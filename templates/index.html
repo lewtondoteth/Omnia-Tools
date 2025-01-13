@@ -139,9 +139,11 @@
             {% if pets %}
                 {% for pet in pets %}
                 <div class="pet-card">
-                    <img src="{{ pet.image }}" alt="Pet Image">
+                    <a href="/pet/{{ pet.pet_id }}">
+                        <img src="{{ pet.image }}" alt="Pet Image">
+                    </a>
                     <div>
-                        <h2>Pet ID: {{ pet.pet_id }}</h2>
+                        <h2><a href="/pet/{{ pet.pet_id }}">Pet ID: {{ pet.pet_id }}</a></h2>
                         <p><strong>Element:</strong> {{ pet.element or 'Unknown' }}</p>
                         <p><strong>Status:</strong> {{ pet.egg_status or 'Unknown' }}</p>
                         {% if pet.egg_status == 'Hatched' %}
