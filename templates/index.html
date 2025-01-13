@@ -66,6 +66,9 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            user-select: none;
+            width: 100%;
+            box-sizing: border-box;
         }
         .checkbox-group {
             display: none;
@@ -120,29 +123,21 @@
     <script>
         function toggleGroup(legendElement) {
             const checkboxGroup = legendElement.nextElementSibling;
-            checkboxGroup.style.display = checkboxGroup.style.display === 'none' ? 'flex' : 'none';
+            const isExpanded = checkboxGroup.style.display === 'flex';
+            // Toggle display with a smooth transition
+            checkboxGroup.style.display = isExpanded ? 'none' : 'flex';
+
+            // Optionally, rotate the arrow indicator
+            const arrow = legendElement.querySelector('span');
+            arrow.textContent = isExpanded ? '▶' : '▼';
         }
 
-        async function fetchResults(event) {
-            event.preventDefault();
-            const formData = new FormData(event.target);
-            const response = await fetch(event.target.action, {
-                method: event.target.method,
-                body: formData
+        document.addEventListener('DOMContentLoaded', () => {
+            const legends = document.querySelectorAll('legend');
+            legends.forEach(legend => {
+                legend.addEventListener('click', () => toggleGroup(legend));
             });
-
-            if (response.ok) {
-                const html = await response.text();
-                document.querySelector('.content').innerHTML = html;
-            } else {
-                alert('Error loading results.');
-            }
-        }
-
-        window.onload = function () {
-            const forms = document.querySelectorAll('form');
-            forms.forEach(form => form.addEventListener('submit', fetchResults));
-        };
+        });
     </script>
 </head>
 <body>
@@ -157,7 +152,7 @@
         <form action="/search" method="POST">
             {% for trait, values in attributes.items() %}
                 <fieldset>
-                    <legend onclick="toggleGroup(this)">
+                    <legend>
                         {{ trait }} <span>&#9654;</span>
                     </legend>
                     <div class="checkbox-group">
