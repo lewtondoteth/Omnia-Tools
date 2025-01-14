@@ -8,20 +8,42 @@ def get_unique_attributes():
     conn = sqlite3.connect('pixlpets1.db')
     cursor = conn.cursor()
 
+    # Fetch general attributes excluding moves
     cursor.execute("""
         SELECT DISTINCT
             trait_type,
             value
         FROM attributes
+        WHERE trait_type != 'Moves'
         ORDER BY trait_type, value
     """)
 
     attributes = cursor.fetchall()
+
+    # Fetch moves grouped by tier in descending order
+    cursor.execute("""
+        SELECT DISTINCT
+            tier,
+            name
+        FROM moves
+        ORDER BY tier DESC, name
+    """)
+
+    moves = cursor.fetchall()
+
     conn.close()
 
+    # Organize moves into tiers
+    grouped_moves = {}
+    for tier, name in moves:
+        grouped_moves.setdefault(f"Tier {tier}", []).append(name)
+
+    # Combine moves with other attributes
     grouped_attributes = {}
     for trait_type, value in attributes:
         grouped_attributes.setdefault(trait_type, []).append(value)
+
+    grouped_attributes["Moves"] = grouped_moves
 
     return grouped_attributes
 
@@ -100,7 +122,7 @@ def search():
         params.append(pet_id)
     elif selected_filters:
         for selected_filter in selected_filters:
-            trait_type, value = selected_filter.split(":")
+            trait_type, value = selected_filter.split(":", 1)
             conditions.append("EXISTS (SELECT 1 FROM attributes WHERE attributes.pet_id = pets.id AND attributes.trait_type = ? AND attributes.value = ?)")
             params.extend([trait_type, value])
 

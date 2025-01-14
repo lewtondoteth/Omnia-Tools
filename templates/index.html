@@ -57,6 +57,13 @@
             display: block;
             margin-bottom: 5px;
         }
+        .move-group {
+            margin-top: 10px;
+        }
+        .move-group h4 {
+            margin-bottom: 5px;
+            color: #007bff;
+        }
         button {
             padding: 10px 20px;
             background-color: #4caf50;
@@ -74,32 +81,6 @@
         }
         .results {
             margin-top: 20px;
-        }
-        .pet-card {
-            border: 1px solid #ddd;
-            padding: 15px;
-            margin-bottom: 15px;
-            border-radius: 8px;
-            background-color: #fff;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-            display: flex;
-            align-items: flex-start;
-            gap: 15px;
-        }
-        .pet-card img {
-            max-width: 150px;
-            max-height: 150px;
-            border-radius: 8px;
-        }
-        .pet-card h2 {
-            margin: 0 0 5px 0;
-            font-size: 18px;
-            color: #4e54c8;
-        }
-        .pet-card p {
-            margin: 5px 0;
-            font-size: 14px;
-            color: #555;
         }
     </style>
     <script>
@@ -123,11 +104,18 @@
                 <legend onclick="toggleGroup(this)">{{ trait }}</legend>
                 <div class="checkbox-group">
                     {% if trait == 'Moves' %}
-                        {% for value in values %}
-                        <label>
-                            <input type="checkbox" name="filters" value="{{ trait }}:{{ value }}">
-                            {{ value }}
-                        </label>
+                        {% for tier, moves in values.items() %}
+                        <div class="move-group">
+                            <h4>{{ tier }}</h4>
+                            <div>
+                                {% for move in moves %}
+                                <label>
+                                    <input type="checkbox" name="filters" value="Moves:{{ move }}">
+                                    {{ move }}
+                                </label>
+                                {% endfor %}
+                            </div>
+                        </div>
                         {% endfor %}
                     {% else %}
                         {% for value in values %}
@@ -140,7 +128,6 @@
                 </div>
             </fieldset>
             {% endfor %}
-            
         </form>
     </div>
     <div class="content">
@@ -164,7 +151,6 @@
                                 No moves available
                             {% endif %}
                         </p>
-                        
                         {% else %}
                         <p><strong>Moves:</strong> Not available (Unhatched)</p>
                         {% endif %}
