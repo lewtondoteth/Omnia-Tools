@@ -122,15 +122,25 @@
             <fieldset>
                 <legend onclick="toggleGroup(this)">{{ trait }}</legend>
                 <div class="checkbox-group">
-                    {% for value in values %}
-                    <label>
-                        <input type="checkbox" name="filters" value="{{ trait }}:{{ value }}">
-                        {{ value }}
-                    </label>
-                    {% endfor %}
+                    {% if trait == 'Moves' %}
+                        {% for value in values %}
+                        <label>
+                            <input type="checkbox" name="filters" value="{{ trait }}:{{ value }}">
+                            {{ value }}
+                        </label>
+                        {% endfor %}
+                    {% else %}
+                        {% for value in values %}
+                        <label>
+                            <input type="checkbox" name="filters" value="{{ trait }}:{{ value }}">
+                            {{ value }}
+                        </label>
+                        {% endfor %}
+                    {% endif %}
                 </div>
             </fieldset>
             {% endfor %}
+            
         </form>
     </div>
     <div class="content">
@@ -147,7 +157,14 @@
                         <p><strong>Element:</strong> {{ pet.element or 'Unknown' }}</p>
                         <p><strong>Status:</strong> {{ pet.egg_status or 'Unknown' }}</p>
                         {% if pet.egg_status == 'Hatched' %}
-                        <p><strong>Moves:</strong> {{ pet.moves or 'No moves available' }}</p>
+                        <p><strong>Moves:</strong> 
+                            {% if pet.moves %}
+                                {{ pet.moves|join(', ') }}
+                            {% else %}
+                                No moves available
+                            {% endif %}
+                        </p>
+                        
                         {% else %}
                         <p><strong>Moves:</strong> Not available (Unhatched)</p>
                         {% endif %}

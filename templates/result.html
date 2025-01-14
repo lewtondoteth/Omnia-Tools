@@ -85,8 +85,10 @@
                 <h2>Moves</h2>
                 <div class="moves-grid">
                     {% for move in moves %}
-                        <div class="move">{{ move }}</div>
-                    {% endfor %}
+                    <div class="move">{{ move }}</div>
+                {% else %}
+                    <div>No moves available</div>
+                {% endfor %}
                 </div>
             {% endif %}
             {% if pet.formatted_attributes %}
