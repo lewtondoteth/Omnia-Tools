@@ -5,7 +5,7 @@ app = Flask(__name__)
 
 def get_unique_attributes():
     """Fetch all unique attributes and their values."""
-    conn = sqlite3.connect('pixlpets1.db')
+    conn = sqlite3.connect('new_pixlpets.db')
     cursor = conn.cursor()
 
     # Fetch general attributes excluding moves
@@ -30,7 +30,6 @@ def get_unique_attributes():
     """)
 
     moves = cursor.fetchall()
-
     conn.close()
 
     # Organize moves into tiers
@@ -49,7 +48,7 @@ def get_unique_attributes():
 
 def get_pet_details(pet_id):
     """Fetch detailed information about a specific pet."""
-    conn = sqlite3.connect('pixlpets1.db')
+    conn = sqlite3.connect('new_pixlpets.db')
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
 
@@ -59,16 +58,28 @@ def get_pet_details(pet_id):
             pets.image AS image,
             element.value AS element,
             egg.value AS egg_status,
-            GROUP_CONCAT(moves.name || ' (T' || moves.tier || ')', ', ') AS moves,
-            GROUP_CONCAT(attributes.trait_type || ': ' || attributes.value, '; ') AS attributes
+            (
+                SELECT GROUP_CONCAT(move_name, ', ')
+                FROM (
+                    SELECT DISTINCT moves.name || ' (T' || moves.tier || ')' AS move_name
+                    FROM pet_moves
+                    JOIN moves ON pet_moves.move_id = moves.id
+                    WHERE pet_moves.pet_id = pets.id
+                ) AS unique_moves
+            ) AS moves,
+            (
+                SELECT GROUP_CONCAT(attribute, '; ')
+                FROM (
+                    SELECT DISTINCT attributes.trait_type || ': ' || attributes.value AS attribute
+                    FROM attributes
+                    WHERE attributes.pet_id = pets.id
+                ) AS unique_attributes
+            ) AS attributes
         FROM pets
         LEFT JOIN attributes AS element ON pets.id = element.pet_id AND element.trait_type = 'Element'
         LEFT JOIN attributes AS egg ON pets.id = egg.pet_id AND egg.trait_type = 'Egg'
-        LEFT JOIN pet_moves ON pets.id = pet_moves.pet_id
-        LEFT JOIN moves ON pet_moves.move_id = moves.id
-        LEFT JOIN attributes ON pets.id = attributes.pet_id
         WHERE pets.id = ?
-        GROUP BY pets.id
+        GROUP BY pets.id, pets.image, element.value, egg.value;
     """, (pet_id,))
 
     pet = cursor.fetchone()
@@ -99,7 +110,7 @@ def search():
     pet_id = request.form.get('pet_id')
     selected_filters = request.form.getlist('filters')
 
-    conn = sqlite3.connect('pixlpets1.db')
+    conn = sqlite3.connect('new_pixlpets.db')
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
 
@@ -109,12 +120,18 @@ def search():
             pets.image AS image,
             element.value AS element,
             egg.value AS egg_status,
-            GROUP_CONCAT(moves.name || ' (T' || moves.tier || ')', ', ') AS moves
+            (
+                SELECT GROUP_CONCAT(move_name, ', ')
+                FROM (
+                    SELECT DISTINCT moves.name || ' (T' || moves.tier || ')' AS move_name
+                    FROM pet_moves
+                    JOIN moves ON pet_moves.move_id = moves.id
+                    WHERE pet_moves.pet_id = pets.id
+                ) AS unique_moves
+            ) AS moves
         FROM pets
         LEFT JOIN attributes AS element ON pets.id = element.pet_id AND element.trait_type = 'Element'
         LEFT JOIN attributes AS egg ON pets.id = egg.pet_id AND egg.trait_type = 'Egg'
-        LEFT JOIN pet_moves ON pets.id = pet_moves.pet_id
-        LEFT JOIN moves ON pet_moves.move_id = moves.id
     """
 
     conditions = []
@@ -126,7 +143,17 @@ def search():
     elif selected_filters:
         for selected_filter in selected_filters:
             trait_type, value = selected_filter.split(":", 1)
-            conditions.append("EXISTS (SELECT 1 FROM attributes WHERE attributes.pet_id = pets.id AND attributes.trait_type = ? AND attributes.value = ?)")
+            conditions.append(
+                """
+                EXISTS (
+                    SELECT 1 
+                    FROM attributes 
+                    WHERE attributes.pet_id = pets.id 
+                    AND attributes.trait_type = ? 
+                    AND attributes.value = ?
+                )
+                """
+            )
             params.extend([trait_type, value])
 
     if conditions:
