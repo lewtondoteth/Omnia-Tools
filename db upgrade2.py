@@ -1,53 +1,53 @@
 import sqlite3
-import shutil
 
-# Define database path
-db_path = "pixlpets1.db"
-backup_path = "pixlpets1_backup.db"
+def upgrade_database(db_path):
+    """Upgrade the database schema to improve performance."""
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
 
-# Step 1: Backup the existing database
-shutil.copyfile(db_path, backup_path)
-print(f"Backup created at {backup_path}.")
+    try:
+        # Add indexes to optimize queries
+        print("Creating indexes...")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_attributes_trait_value ON attributes(trait_type, value);")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_moves_name_tier ON moves(name, tier);")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_pet_moves_pet_move ON pet_moves(pet_id, move_id);")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_pets_id ON pets(id);")
 
-# Step 2: Connect to the database
-conn = sqlite3.connect(db_path)
-cursor = conn.cursor()
+        print("Indexes created successfully.")
 
-# Step 3: Create a materialized view for simplified querying
-try:
-    cursor.execute("DROP VIEW IF EXISTS pets_attributes_view;")
-    cursor.execute("""
-        CREATE VIEW pets_attributes_view AS
+        # Add more optimizations if needed
+        # Example: Consolidate frequently joined data into a new table
+        print("Creating optimized table for queries...")
+        cursor.execute("DROP TABLE IF EXISTS pet_attributes_moves;")
+        cursor.execute("""
+        CREATE TABLE pet_attributes_moves AS
         SELECT
             pets.id AS pet_id,
-            GROUP_CONCAT(CASE WHEN trait_type = 'Element' THEN value END) AS element,
-            GROUP_CONCAT(CASE WHEN trait_type = 'Egg' THEN value END) AS egg_status,
-            GROUP_CONCAT(trait_type || ':' || value, '|') AS all_attributes
+            pets.image AS pet_image,
+            element.value AS element,
+            egg.value AS egg_status,
+            GROUP_CONCAT(moves.name || ' (T' || moves.tier || ')', ', ') AS moves,
+            attributes.trait_type AS trait_type,
+            attributes.value AS attribute_value
         FROM pets
+        LEFT JOIN attributes AS element ON pets.id = element.pet_id AND element.trait_type = 'Element'
+        LEFT JOIN attributes AS egg ON pets.id = egg.pet_id AND egg.trait_type = 'Egg'
+        LEFT JOIN pet_moves ON pets.id = pet_moves.pet_id
+        LEFT JOIN moves ON pet_moves.move_id = moves.id
         LEFT JOIN attributes ON pets.id = attributes.pet_id
-        GROUP BY pets.id;
-    """)
-    print("Created materialized view 'pets_attributes_view'.")
-except sqlite3.OperationalError as e:
-    print(f"Error creating view: {e}")
+        GROUP BY pets.id, attributes.trait_type, attributes.value;
+        """)
 
-# Step 4: Add indexes to optimize search queries
-cursor.execute("CREATE INDEX IF NOT EXISTS idx_attributes_pet_id ON attributes(pet_id);")
-cursor.execute("CREATE INDEX IF NOT EXISTS idx_attributes_trait_type_value ON attributes(trait_type, value);")
-conn.commit()
-print("Indexes added to 'attributes' table.")
+        print("Optimized table created successfully.")
 
-# Step 5: Example generalized query
-example_query = """
-    SELECT pet_id, element, egg_status
-    FROM pets_attributes_view
-    WHERE all_attributes LIKE '%Element:Fire%'
-      AND all_attributes LIKE '%Egg:Hatched%'
-"""
-cursor.execute(example_query)
-example_results = cursor.fetchall()
-print("Example query results:", example_results)
+        conn.commit()
+    except Exception as e:
+        print(f"An error occurred during the upgrade: {e}")
+        conn.rollback()
+    finally:
+        conn.close()
 
-# Close the connection
-conn.close()
-print("Database schema updated successfully!")
+if __name__ == "__main__":
+    db_path = "pixlpets1.db"
+    upgrade_database(db_path)
+    print("Database upgrade complete.")
