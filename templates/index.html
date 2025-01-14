@@ -32,8 +32,7 @@
         h1 {
             margin-top: 0;
             font-size: 24px;
-            color: #fff;
-            text-align: center;
+            color: #333;
         }
         fieldset {
             border: none;
@@ -82,6 +81,33 @@
         .results {
             margin-top: 20px;
         }
+        .pet-card {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #f8f8f8;
+        }
+        .pet-card img {
+            display: block;
+            max-width: 100px;
+            max-height: 100px;
+            width: auto;
+            height: auto;
+            border-radius: 8px;
+            margin-right: 20px;
+            object-fit: cover; /* Ensure images are properly cropped */
+        }
+        .pet-card a {
+            text-decoration: none;
+            color: #007bff;
+            font-weight: bold;
+        }
+        .pet-card a:hover {
+            text-decoration: underline;
+        }
     </style>
     <script>
         function toggleGroup(legendElement) {
@@ -99,6 +125,7 @@
                 <input type="text" name="pet_id" placeholder="Enter Pet ID or leave blank to search by attributes">
                 <button type="submit">Search</button>
             </div>
+            <!-- Dynamic Filters -->
             {% for trait, values in attributes.items() %}
             <fieldset>
                 <legend onclick="toggleGroup(this)">{{ trait }}</legend>
@@ -143,17 +170,13 @@
                         <h2><a href="/pet/{{ pet.pet_id }}">Pet ID: {{ pet.pet_id }}</a></h2>
                         <p><strong>Element:</strong> {{ pet.element or 'Unknown' }}</p>
                         <p><strong>Status:</strong> {{ pet.egg_status or 'Unknown' }}</p>
-                        {% if pet.egg_status == 'Hatched' %}
                         <p><strong>Moves:</strong> 
                             {% if pet.moves %}
-                                {{ pet.moves|join(', ') }}
+                                {{ pet.moves }}
                             {% else %}
                                 No moves available
                             {% endif %}
                         </p>
-                        {% else %}
-                        <p><strong>Moves:</strong> Not available (Unhatched)</p>
-                        {% endif %}
                     </div>
                 </div>
                 {% endfor %}

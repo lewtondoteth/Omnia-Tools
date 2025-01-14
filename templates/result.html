@@ -29,15 +29,12 @@
             font-size: 24px;
         }
         .pet-image {
-            margin: 20px 0;
+            max-width: 200px;
+            max-height: 200px;
             border: 1px solid #ddd;
             border-radius: 8px;
-            max-width: 100%;
-            max-height: 300px;
-            height: auto;
+            margin: 20px auto;
             display: block;
-            margin-left: auto;
-            margin-right: auto;
         }
         .attributes, .moves {
             text-align: left;
@@ -47,17 +44,21 @@
             border-radius: 5px;
             border: 1px solid #ddd;
         }
-        .moves-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
+        .moves-container {
+            display: flex;
+            flex-wrap: wrap;
             gap: 10px;
-            margin-top: 20px;
-        }
-        .move {
-            border: 1px solid #ccc;
+            margin-top: 10px;
+            background-color: #f0f0f0;
             padding: 10px;
-            text-align: center;
-            background-color: #f9f9f9;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+        }
+        .move-box {
+            border: 1px solid #ddd;
+            padding: 5px 10px;
+            border-radius: 5px;
+            background-color: #e9e9e9;
         }
         a {
             text-decoration: none;
@@ -78,18 +79,18 @@
             {% if pet.image %}
                 <img src="{{ pet.image }}" alt="Pet Image" class="pet-image">
             {% endif %}
-            {% if element %}
-                <h2>Element: {{ element }}</h2>
+            {% if pet.element %}
+                <h2>Element: {{ pet.element }}</h2>
             {% endif %}
-            {% if not is_unhatched %}
+            {% if not pet.is_unhatched %}
                 <h2>Moves</h2>
-                <div class="moves-grid">
-                    {% for move in moves %}
-                    <div class="move">{{ move }}</div>
-                {% else %}
-                    <div>No moves available</div>
-                {% endfor %}
+                <div class="moves-container">
+                    {% for move in pet.moves %}
+                    <div class="move-box">{{ move }}</div>
+                    {% endfor %}
                 </div>
+            {% else %}
+                <p><strong>Moves:</strong> Not available (Unhatched)</p>
             {% endif %}
             {% if pet.formatted_attributes %}
                 <h2>Attributes</h2>

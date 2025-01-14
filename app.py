@@ -77,12 +77,15 @@ def get_pet_details(pet_id):
     if not pet:
         return None
 
+    # Split moves into separate items and retain their formatting
+    all_moves = pet["moves"].split(', ') if pet["moves"] else []
+
     return {
         "id": pet["id"],
         "image": pet["image"],
         "element": pet["element"],
         "is_unhatched": pet["egg_status"] != "Hatched",
-        "moves": pet["moves"].split(', ') if pet["moves"] else [],
+        "moves": all_moves,
         "formatted_attributes": pet["attributes"].split('; ') if pet["attributes"] else []
     }
 
